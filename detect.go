@@ -21,13 +21,20 @@ const (
 	LanguageJavascript = "Javascript"
 	LanguageJava       = "Java"
 	LanguageShell      = "Shell"
+
+	IconGolang     = "language-golang"
+	IconTypescript = "language-typescript"
+	IconJavascript = "language-javascript"
+	IconJava       = "language-java"
+	IconShell      = "Terminal"
 )
 
-func DetectLanguage(folder string) string {
+func DetectLanguage(folder string) (string, string) {
+	lang, icon := "", ""
+
 	files, err := ioutil.ReadDir(folder)
 	if err == nil {
 		prio := ^Priority(0)
-		lang := ""
 		for _, file := range files {
 			if prio == 0 {
 				break
@@ -47,6 +54,7 @@ func DetectLanguage(folder string) string {
 
 				prio = PrioGolang
 				lang = LanguageGolang
+				icon = IconGolang
 
 			case ".json":
 				if prio <= PrioTypescript {
@@ -56,10 +64,12 @@ func DetectLanguage(folder string) string {
 				if name == "tsconfig.json" {
 					prio = PrioTypescript
 					lang = LanguageTypescript
+					icon = IconTypescript
 					continue
 				} else if name == "package.json" && prio <= PrioJavascript {
 					prio = PrioJavascript
 					lang = LanguageJavascript
+					icon = IconJavascript
 					continue
 				}
 
@@ -69,6 +79,7 @@ func DetectLanguage(folder string) string {
 				}
 				prio = PrioJavascript
 				lang = LanguageJavascript
+				icon = IconJavascript
 
 			case ".sh":
 				if prio <= PrioShell {
@@ -76,6 +87,7 @@ func DetectLanguage(folder string) string {
 				}
 				prio = PrioShell
 				lang = LanguageShell
+				icon = IconShell
 
 			case ".properties":
 				if prio <= PrioJava {
@@ -85,13 +97,13 @@ func DetectLanguage(folder string) string {
 				if name == "application.properties" || name == "system.properties" {
 					prio = PrioJava
 					lang = LanguageJava
+					icon = IconJava
 				}
 
 			}
 
 		}
-		return lang
 	}
 
-	return ""
+	return lang, icon
 }

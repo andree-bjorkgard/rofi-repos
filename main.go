@@ -146,7 +146,7 @@ func main() {
 					Value: path.Join(folder, file.Name()),
 				}
 
-				opt.Category = DetectLanguage(opt.Value)
+				opt.Category, opt.Icon = DetectLanguage(opt.Value)
 
 				opts = append(opts, opt)
 			}
