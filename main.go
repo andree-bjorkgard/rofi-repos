@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -22,62 +23,59 @@ func main() {
 		log.Println("State:", rofi.GetState())
 	}
 
-	if val := rofi.GetValue(); val != nil {
-		if rofi.GetVerbosityLevel() >= 2 {
-			log.Printf("Modifier: %d, Cmd: %s, Value: %s\n", val.Modifier, val.Cmd, val.Value)
+	val := rofi.GetValue()
+	if val == nil {
+		val = &rofi.Value{}
+	}
 
-			if rofi.GetVerbosityLevel() >= 5 {
-				os.Exit(0)
-			}
-		}
+	if rofi.GetVerbosityLevel() >= 2 {
+		log.Printf("Cmd: %s, Value: %s\n", val.Cmd, val.Value)
 
-		// Only trigger on first selection
-		if val.Cmd == "" {
-			rofi.SaveToHistory(namespace, val.Value)
-		}
-
-		if val.Cmd == "" && val.Modifier == 0 {
-			val.Cmd = "code"
-		}
-
-		if val.Cmd != "" {
-			var cmd *exec.Cmd
-			switch val.Cmd {
-			case "terminal":
-				cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value)
-			case "clipboard":
-				cmd = exec.Command("xsel", "--input", "--clipboard")
-				cmd.Stdin = strings.NewReader(val.Value)
-
-				if err := cmd.Run(); err != nil {
-					os.Exit(1)
-				}
-
-				os.Exit(0)
-
-			case "url":
-				cmd = exec.Command("xdg-open", val.Value)
-			default:
-				cmd = exec.Command(val.Cmd, val.Value)
-			}
-			cmd.Start()
+		if rofi.GetVerbosityLevel() >= 5 {
 			os.Exit(0)
 		}
+	}
 
+	var cmd *exec.Cmd
+
+	switch val.Cmd {
+	case "terminal":
+		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value)
+	case "clipboard":
+		cmd = exec.Command("xsel", "--input", "--clipboard")
+		cmd.Stdin = strings.NewReader(val.Value)
+
+		if err := cmd.Run(); err != nil {
+			os.Exit(1)
+		}
+
+		os.Exit(0)
+
+	case "url":
+		cmd = exec.Command("xdg-open", val.Value)
+
+	case "code-save":
+		rofi.SaveToHistory(namespace, val.Value)
+		fallthrough
+	case "code":
+		cmd = exec.Command("code", val.Value)
+
+	case "context-menu":
+		rofi.SaveToHistory(namespace, val.Value)
 		rofi.SetPrompt("")
 		rofi.SetMessage(path.Base(val.Value))
 
 		opts = append(opts, rofi.Option{
-			Name:  "Open in VSCode",
+			Label: "Open in VSCode",
 			Icon:  "visual-studio-code",
 			Value: val.Value,
-			Cmd:   "code",
+			Cmds:  []string{"code"},
 		},
 			rofi.Option{
-				Name:  "Open in terminal",
+				Label: "Open in terminal",
 				Icon:  "Terminal",
 				Value: val.Value,
-				Cmd:   "terminal",
+				Cmds:  []string{"terminal"},
 			},
 		)
 
@@ -96,32 +94,34 @@ func main() {
 				}
 
 				opts = append(opts, rofi.Option{
-					Name:  "Show on Github",
+					Label: "Show on Github",
 					Icon:  "github",
 					Value: url,
-					Cmd:   "url",
+					Cmds:  []string{"url"},
 				})
 			}
 		}
 
 		if _, err := exec.LookPath("xsel"); err == nil {
 			opts = append(opts, rofi.Option{
-				Name:  "Copy path to clipboard",
+				Label: "Copy path to clipboard",
 				Icon:  "gtk-copy",
 				Value: val.Value,
-				Cmd:   "clipboard",
+				Cmds:  []string{"clipboard"},
 			})
 		}
 
 		opts = append(opts, rofi.Option{
-			Name: "Go back",
-			Icon: "back",
+			Label: "Go back",
+			Icon:  "back",
+			Cmds:  []string{"back"},
 		})
 
-	} else {
+	default:
 		rofi.SetPrompt("")
 		rofi.SetMessage("")
 		rofi.UseHistory(namespace)
+		rofi.EnableMarkup()
 
 		stringPaths := os.Getenv("REPO_PATHS")
 		if stringPaths == "" {
@@ -142,17 +142,26 @@ func main() {
 				}
 
 				opt := rofi.Option{
-					Name:  file.Name(),
+					Label: file.Name(),
 					Value: path.Join(folder, file.Name()),
+					Cmds:  []string{"code-save", "context-menu"},
 				}
 
 				opt.Category, opt.Icon = DetectLanguage(opt.Value)
+
+				if opt.Category != "" {
+					opt.Category = fmt.Sprintf("<span style=\"italic\" size=\"10pt\" >(%s)</span>", opt.Category)
+				}
 
 				opts = append(opts, opt)
 			}
 		}
 		opts.Sort()
+	}
 
+	if cmd != nil {
+		cmd.Start()
+		os.Exit(0)
 	}
 
 	opts.PrintAll()
