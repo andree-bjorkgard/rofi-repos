@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -10,6 +9,9 @@ import (
 	"strings"
 
 	"github.com/ingentingalls/rofi"
+
+	"github.com/ingentingalls/rofi-repos/pkg/config"
+	"github.com/ingentingalls/rofi-repos/pkg/repo"
 )
 
 const namespace = "recent_repos"
@@ -123,40 +125,26 @@ func main() {
 		rofi.UseHistory(namespace)
 		rofi.EnableMarkup()
 
-		stringPaths := os.Getenv("REPO_PATHS")
-		if stringPaths == "" {
-			log.Println("error: Env REPO_PATHS is empty")
-			return
-		}
+		cfg := config.GetListConfig()
+		repos := repo.GetCategorizedRepos(cfg.RepoCachePath)
 
-		folders := strings.Split(stringPaths, ";")
-
-		for _, folder := range folders {
-			repos, err := ioutil.ReadDir(folder)
-			if err != nil {
-				continue
+		for _, repo := range repos {
+			opt := rofi.Option{
+				Label:    repo.Name,
+				Value:    repo.Path,
+				Category: repo.Language,
+				Cmds:     []string{"code-save", "context-menu"},
 			}
 
-			for _, repo := range repos {
-				if !repo.IsDir() {
-					// Is not a repo
-					continue
-				}
-
-				opt := rofi.Option{
-					Label: repo.Name(),
-					Value: path.Join(folder, repo.Name()),
-					Cmds:  []string{"code-save", "context-menu"},
-				}
-
-				opt.Category, opt.Icon = DetectLanguage(opt.Value)
-
-				if opt.Category != "" {
-					opt.Category = fmt.Sprintf("<span style=\"italic\" size=\"10pt\" >(%s)</span>", opt.Category)
-				}
-
-				opts = append(opts, opt)
+			if repo.Language != "" {
+				opt.Icon = fmt.Sprintf("language-%s", repo.Language)
 			}
+
+			if opt.Category != "" {
+				opt.Category = fmt.Sprintf("<span style=\"italic\" size=\"10pt\" >(%s)</span>", opt.Category)
+			}
+
+			opts = append(opts, opt)
 		}
 		opts.Sort()
 	}

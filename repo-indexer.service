@@ -1,0 +1,10 @@
+[Unit]
+Description=Indexer of repos service
+
+[Service]
+ExecStart=%h/go/bin/repo-indexer
+Restart=always
+RestartSec=300
+
+[Install]
+WantedBy=default.target
