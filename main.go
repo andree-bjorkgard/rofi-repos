@@ -125,25 +125,27 @@ func main() {
 
 		stringPaths := os.Getenv("REPO_PATHS")
 		if stringPaths == "" {
+			log.Println("error: Env REPO_PATHS is empty")
 			return
 		}
 
 		folders := strings.Split(stringPaths, ";")
 
 		for _, folder := range folders {
-			files, err := ioutil.ReadDir(folder)
+			repos, err := ioutil.ReadDir(folder)
 			if err != nil {
 				continue
 			}
 
-			for _, file := range files {
-				if !file.IsDir() {
+			for _, repo := range repos {
+				if !repo.IsDir() {
+					// Is not a repo
 					continue
 				}
 
 				opt := rofi.Option{
-					Label: file.Name(),
-					Value: path.Join(folder, file.Name()),
+					Label: repo.Name(),
+					Value: path.Join(folder, repo.Name()),
 					Cmds:  []string{"code-save", "context-menu"},
 				}
 
