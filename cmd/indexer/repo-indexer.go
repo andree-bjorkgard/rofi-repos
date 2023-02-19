@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
+	"flag"
+	"fmt"
 	"io/fs"
 	"log"
 	"os"
@@ -19,27 +22,38 @@ import (
 )
 
 func main() {
-	log.Println("Starting service")
+	dryRun := flag.Bool("dry-run", false, "Dry run simulates indexing but prints to stdout instead of file")
+	daemon := flag.Bool("daemon", false, "If it should start in daemon mode and index on an interval. Otherwise it just indexes once and then quits")
+	flag.Parse()
+
 	cfg := config.GetIndexerConfig()
+	cfg.DryRun = *dryRun
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	if *daemon {
+		log.Println("Starting daemon")
 
-	if cfg.RunOnStart {
-		log.Println("Trigger index on startup")
-		index(cfg)
-	}
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	log.Println("Running on a cron")
-	for {
-		select {
-		case <-c:
-			log.Println("Got interrupt signal. Shutting down.")
-			os.Exit(0)
-
-		case <-time.After(time.Minute * time.Duration(cfg.Interval)):
+		if cfg.RunOnStart {
+			log.Println("Trigger index on startup")
 			index(cfg)
 		}
+
+		for {
+			log.Println("Sleeping")
+			select {
+			case <-c:
+				log.Println("Got interrupt signal. Shutting down.")
+				os.Exit(0)
+
+			case <-time.After(time.Minute * time.Duration(cfg.Interval)):
+				index(cfg)
+			}
+		}
+
+	} else {
+		index(cfg)
 	}
 }
 
@@ -110,8 +124,17 @@ func index(cfg config.IndexerConfig) {
 		})
 	}
 
-	if err := repo.SaveCategorizedRepos(cfg.RepoCachePath, categorizedRepos); err != nil {
-		log.Fatalf("Failed while saving categorized repos: %s", err)
+	if !cfg.DryRun {
+		if err := repo.SaveCategorizedRepos(cfg.RepoCachePath, categorizedRepos); err != nil {
+			log.Fatalf("Failed while saving categorized repos: %s", err)
+		}
+	} else {
+		output, err := json.MarshalIndent(categorizedRepos, "", "  ")
+		if err != nil {
+			log.Println("Failed while trying to marshall output during dry-run")
+		}
+
+		fmt.Println(string(output))
 	}
 
 	log.Println("Indexing complete")

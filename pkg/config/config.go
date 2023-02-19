@@ -22,6 +22,8 @@ type IndexerConfig struct {
 	RepoCachePath string
 	RunOnStart    bool
 
+	DryRun bool
+
 	// Skippable directories while analyzing the language
 	SkippableDirs []string `toml:"SkippableDirsWhileAnalyzing"`
 }

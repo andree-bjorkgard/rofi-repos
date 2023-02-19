@@ -2,7 +2,7 @@
 Description=Indexer of repos service
 
 [Service]
-ExecStart=%h/go/bin/repo-indexer
+ExecStart=%h/go/bin/repo-indexer -daemon
 Restart=always
 RestartSec=300
 
