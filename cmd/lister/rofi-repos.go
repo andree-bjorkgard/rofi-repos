@@ -56,11 +56,11 @@ func main() {
 	case "url":
 		cmd = exec.Command("xdg-open", val.Value)
 
-	case "code-save":
+	case "editor-save":
 		rofi.SaveToHistory(namespace, val.Value)
 		fallthrough
-	case "code":
-		cmd = exec.Command("code", val.Value)
+	case "editor":
+		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "i3-sensible-editor", val.Value)
 
 	case "context-menu":
 		rofi.SaveToHistory(namespace, val.Value)
@@ -68,10 +68,10 @@ func main() {
 		rofi.SetMessage(path.Base(val.Value))
 
 		opts = append(opts, rofi.Option{
-			Label: "Open in VSCode",
-			Icon:  "visual-studio-code",
+			Label: "Open in editor",
+			Icon:  "",
 			Value: val.Value,
-			Cmds:  []string{"code"},
+			Cmds:  []string{"editor"},
 		},
 			rofi.Option{
 				Label: "Open in terminal",
@@ -96,7 +96,7 @@ func main() {
 				}
 
 				opts = append(opts, rofi.Option{
-					Label: "Show on Github",
+					Label: "Visit repository in browser",
 					Icon:  "github",
 					Value: url,
 					Cmds:  []string{"url"},
@@ -133,7 +133,7 @@ func main() {
 				Label:    repo.Name,
 				Value:    repo.Path,
 				Category: repo.Language,
-				Cmds:     []string{"code-save", "context-menu"},
+				Cmds:     []string{"editor-save", "context-menu"},
 			}
 
 			if repo.Language != "" {
