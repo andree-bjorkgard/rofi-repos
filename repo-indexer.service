@@ -3,8 +3,11 @@ Description=Indexer of repos service
 
 [Service]
 ExecStart=%h/go/bin/repo-indexer -daemon
-Restart=always
-RestartSec=300
+
+[Timer]
+OnCalendar=*:0/15
+OnActiveSec=0
+Persistent=false
 
 [Install]
-WantedBy=default.target
+WantedBy=timers.target
