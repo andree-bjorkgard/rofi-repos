@@ -83,44 +83,10 @@ func index(cfg config.IndexerConfig) {
 	var categorizedRepos []repo.CategorizedRepo
 
 	for _, r := range repos {
-		langProbability := map[string]int{}
-
-		filepath.Walk(r, func(p string, info os.FileInfo, err error) error {
-			if slices.IndexFunc(cfg.SkippableDirs, func(dir string) bool { return dir == p }) != -1 {
-				return filepath.SkipDir
-			}
-
-			if errors.Is(err, fs.ErrPermission) {
-				return nil
-			} else if err != nil {
-				log.Printf("Could not traverse file (%s): %s", info.Name(), err)
-				return nil
-			}
-
-			if info.IsDir() {
-				return nil
-			}
-
-			lang, safe := enry.GetLanguageByExtension(p)
-			if lang != "" && safe {
-				langProbability[lang]++
-			}
-
-			return nil
-		})
-
-		// detect language that the repo uses
-		topLang := ""
-		for lang, probability := range langProbability {
-			if topLang == "" || probability > langProbability[topLang] {
-				topLang = lang
-			}
-		}
-
 		categorizedRepos = append(categorizedRepos, repo.CategorizedRepo{
 			Name:     path.Base(r),
 			Path:     r,
-			Language: topLang,
+			Language: detectLanguage(r, cfg.SkippableDirs),
 		})
 	}
 
@@ -139,3 +105,41 @@ func index(cfg config.IndexerConfig) {
 
 	log.Println("Indexing complete")
 }
+
+func detectLanguage(dir string, skippableDirs []string) string {
+	langProbability := map[string]int{}
+
+	filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
+		if slices.IndexFunc(skippableDirs, func(d string) bool { return d == p }) != -1 {
+			return filepath.SkipDir
+		}
+
+		if errors.Is(err, fs.ErrPermission) {
+			return nil
+		} else if err != nil {
+			log.Printf("Could not traverse file (%s): %s", info.Name(), err)
+			return nil
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		lang, safe := enry.GetLanguageByExtension(p)
+		if lang != "" && safe {
+			langProbability[lang]++
+		}
+
+		return nil
+	})
+
+	topLang := ""
+	for lang, probability := range langProbability {
+		if topLang == "" || probability > langProbability[topLang] {
+			topLang = lang
+		}
+	}
+
+	return topLang
+}
+
