@@ -119,6 +119,50 @@ func main() {
 			Cmds:  []string{"back"},
 		})
 
+	case "subprojects":
+		rofi.SetPrompt("")
+		rofi.EnableMarkup()
+
+		cfg := config.GetListConfig()
+		repos := repo.GetCategorizedRepos(cfg.RepoCachePath)
+
+		// Find the monorepo matching the selected value
+		var subProjects []repo.CategorizedRepo
+		for _, r := range repos {
+			if r.Path == val.Value {
+				subProjects = r.SubProjects
+				rofi.SetMessage(r.Name)
+				break
+			}
+		}
+
+		for _, sp := range subProjects {
+			opt := rofi.Option{
+				Label:    sp.Name,
+				Value:    sp.Path,
+				Category: sp.Language,
+				Cmds:     []string{"editor-save", "context-menu"},
+			}
+
+			if sp.Language != "" {
+				opt.Icon = fmt.Sprintf("language-%s", sp.Language)
+			}
+
+			if opt.Category != "" {
+				opt.Category = fmt.Sprintf("<span style=\"italic\" size=\"10pt\" >(%s)</span>", opt.Category)
+			}
+
+			opts = append(opts, opt)
+		}
+
+		opts = append(opts, rofi.Option{
+			Label: "Go back",
+			Icon:  "back",
+			Cmds:  []string{"back"},
+		})
+
+		opts.Sort()
+
 	default:
 		rofi.SetPrompt("")
 		rofi.SetMessage("")
@@ -129,11 +173,16 @@ func main() {
 		repos := repo.GetCategorizedRepos(cfg.RepoCachePath)
 
 		for _, repo := range repos {
+			cmds := []string{"editor-save", "context-menu"}
+			if len(repo.SubProjects) > 0 {
+				cmds = []string{"subprojects", "context-menu"}
+			}
+
 			opt := rofi.Option{
 				Label:    repo.Name,
 				Value:    repo.Path,
 				Category: repo.Language,
-				Cmds:     []string{"editor-save", "context-menu"},
+				Cmds:     cmds,
 			}
 
 			if repo.Language != "" {
