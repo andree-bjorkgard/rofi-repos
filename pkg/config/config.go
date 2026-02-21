@@ -43,7 +43,7 @@ RunOnStart = true
 # all blacklisted directories should be relative to it
 # 
 # Uncomment to use
-Blacklist = [".config", ".cache", ".local", ".cargo", ".oh-my-zsh"]
+Blacklist = [".config", ".cache", ".local", ".cargo", ".oh-my-zsh", ".claude"]
 
 # Skipping folders
 SkippableDirsWhileAnalyzing = [".git", "node_modules", "vendor"]
