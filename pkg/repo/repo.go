@@ -10,9 +10,10 @@ import (
 )
 
 type CategorizedRepo struct {
-	Name     string `json:"name"`
-	Path     string `json:"path"`
-	Language string `json:"language"`
+	Name        string            `json:"name"`
+	Path        string            `json:"path"`
+	Language    string            `json:"language"`
+	SubProjects []CategorizedRepo `json:"subProjects,omitempty"`
 }
 
 func GetCategorizedRepos(cachePath string) []CategorizedRepo {
