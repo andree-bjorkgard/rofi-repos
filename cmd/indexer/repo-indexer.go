@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -83,11 +84,19 @@ func index(cfg config.IndexerConfig) {
 	var categorizedRepos []repo.CategorizedRepo
 
 	for _, r := range repos {
-		categorizedRepos = append(categorizedRepos, repo.CategorizedRepo{
+		entry := repo.CategorizedRepo{
 			Name:     path.Base(r),
 			Path:     r,
 			Language: detectLanguage(r, cfg.SkippableDirs),
-		})
+		}
+
+		if monorepo := findMonorepoConfig(r, cfg.Monorepos); monorepo != nil {
+			log.Printf("Monorepo detected: %s, scanning sub-projects", r)
+			entry.SubProjects = discoverSubProjects(r, monorepo.SubProjects, cfg.SkippableDirs)
+			log.Printf("Found %d sub-projects in %s", len(entry.SubProjects), r)
+		}
+
+		categorizedRepos = append(categorizedRepos, entry)
 	}
 
 	if !cfg.DryRun {
@@ -143,3 +152,74 @@ func detectLanguage(dir string, skippableDirs []string) string {
 	return topLang
 }
 
+
+func discoverSubProjects(monorepoPath string, rules []config.SubProjectRule, skippableDirs []string) []repo.CategorizedRepo {
+	var subProjects []repo.CategorizedRepo
+
+	for _, rule := range rules {
+		searchRoot := path.Join(monorepoPath, rule.BasePath)
+
+		info, err := os.Stat(searchRoot)
+		if err != nil || !info.IsDir() {
+			log.Printf("Monorepo scan path does not exist: %s", searchRoot)
+			continue
+		}
+
+		maxDepth := rule.MaxDepth
+		if maxDepth == 0 {
+			maxDepth = 1
+		}
+
+		baseDepth := strings.Count(searchRoot, string(os.PathSeparator))
+
+		filepath.Walk(searchRoot, func(p string, info os.FileInfo, err error) error {
+			if err != nil {
+				return nil
+			}
+
+			if !info.IsDir() {
+				return nil
+			}
+
+			// Skip the search root itself
+			if p == searchRoot {
+				return nil
+			}
+
+			currentDepth := strings.Count(p, string(os.PathSeparator)) - baseDepth
+
+			if currentDepth > maxDepth {
+				return filepath.SkipDir
+			}
+
+			// If marker is set, check if this directory contains the marker file
+			if rule.Marker != "" {
+				markerPath := path.Join(p, rule.Marker)
+				if _, err := os.Stat(markerPath); err != nil {
+					// No marker file here; continue walking deeper
+					return nil
+				}
+			}
+
+			subProjects = append(subProjects, repo.CategorizedRepo{
+				Name:     path.Base(p),
+				Path:     p,
+				Language: detectLanguage(p, skippableDirs),
+			})
+
+			// Don't descend into a matched sub-project
+			return filepath.SkipDir
+		})
+	}
+
+	return subProjects
+}
+
+func findMonorepoConfig(repoPath string, monorepos []config.MonorepoConfig) *config.MonorepoConfig {
+	for i, m := range monorepos {
+		if m.Path == repoPath {
+			return &monorepos[i]
+		}
+	}
+	return nil
+}
