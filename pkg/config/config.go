@@ -14,6 +14,17 @@ import (
 const namespace = "rofi-repos"
 const repoCacheName = "categorizedRepos"
 
+type SubProjectRule struct {
+	BasePath string
+	MaxDepth int
+	Marker   string
+}
+
+type MonorepoConfig struct {
+	Path        string
+	SubProjects []SubProjectRule
+}
+
 type IndexerConfig struct {
 	BaseDirectory string
 	Blacklist     []string
@@ -26,6 +37,8 @@ type IndexerConfig struct {
 
 	// Skippable directories while analyzing the language
 	SkippableDirs []string `toml:"SkippableDirsWhileAnalyzing"`
+
+	Monorepos []MonorepoConfig
 }
 
 const configTemplate = `# The base directory to start indexing from
