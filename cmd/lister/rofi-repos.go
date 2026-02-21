@@ -60,7 +60,7 @@ func main() {
 		rofi.SaveToHistory(namespace, val.Value)
 		fallthrough
 	case "editor":
-		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "i3-sensible-editor", val.Value)
+		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "i3-sensible-editor")
 
 	case "context-menu":
 		rofi.SaveToHistory(namespace, val.Value)
