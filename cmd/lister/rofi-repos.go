@@ -15,6 +15,7 @@ import (
 )
 
 const namespace = "recent_repos"
+const subprojectNamespace = "recent_subprojects"
 
 func main() {
 	rofi.EnableHotkeys()
@@ -56,6 +57,9 @@ func main() {
 	case "url":
 		cmd = exec.Command("xdg-open", val.Value)
 
+	case "subproject-editor-save":
+		rofi.SaveToHistory(subprojectNamespace, val.Value)
+		fallthrough
 	case "editor-save":
 		rofi.SaveToHistory(namespace, val.Value)
 		fallthrough
@@ -121,6 +125,7 @@ func main() {
 
 	case "subprojects":
 		rofi.SetPrompt("")
+		rofi.UseHistory(subprojectNamespace)
 		rofi.EnableMarkup()
 
 		cfg := config.GetListConfig()
@@ -141,7 +146,7 @@ func main() {
 				Label:    sp.Name,
 				Value:    sp.Path,
 				Category: sp.Language,
-				Cmds:     []string{"editor-save", "context-menu"},
+				Cmds:     []string{"subproject-editor-save", "context-menu"},
 			}
 
 			if sp.Language != "" {
