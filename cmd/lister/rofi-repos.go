@@ -59,7 +59,18 @@ func main() {
 
 	case "subproject-editor-save":
 		rofi.SaveToHistory(subprojectNamespace, val.Value)
-		fallthrough
+		// Save the parent monorepo path to main history so it rises in the list
+		cfg := config.GetListConfig()
+		repos := repo.GetCategorizedRepos(cfg.RepoCachePath)
+		for _, r := range repos {
+			for _, sp := range r.SubProjects {
+				if sp.Path == val.Value {
+					rofi.SaveToHistory(namespace, r.Path)
+					break
+				}
+			}
+		}
+		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "i3-sensible-editor")
 	case "editor-save":
 		rofi.SaveToHistory(namespace, val.Value)
 		fallthrough
