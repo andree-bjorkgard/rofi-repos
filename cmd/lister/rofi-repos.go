@@ -15,7 +15,29 @@ import (
 )
 
 const namespace = "recent_repos"
-const subprojectNamespace = "recent_subprojects"
+
+// subProjectLabels returns display labels for sub-projects.
+// Uses "parentName/subProjectName" unless names collide,
+// in which case falls back to "parentName/relativePath".
+func subProjectLabels(parentName, parentPath string, subProjects []repo.CategorizedRepo) map[string]string {
+	nameCount := make(map[string]int)
+	for _, sp := range subProjects {
+		nameCount[path.Base(sp.Path)]++
+	}
+
+	labels := make(map[string]string, len(subProjects))
+	for _, sp := range subProjects {
+		baseName := path.Base(sp.Path)
+		if nameCount[baseName] > 1 {
+			rel := strings.TrimPrefix(sp.Path, parentPath+"/")
+			labels[sp.Path] = parentName + "/" + rel
+		} else {
+			labels[sp.Path] = parentName + "/" + baseName
+		}
+	}
+
+	return labels
+}
 
 func main() {
 	rofi.EnableHotkeys()
@@ -57,20 +79,6 @@ func main() {
 	case "url":
 		cmd = exec.Command("xdg-open", val.Value)
 
-	case "subproject-editor-save":
-		rofi.SaveToHistory(subprojectNamespace, val.Value)
-		// Save the parent monorepo path to main history so it rises in the list
-		cfg := config.GetListConfig()
-		repos := repo.GetCategorizedRepos(cfg.RepoCachePath)
-		for _, r := range repos {
-			for _, sp := range r.SubProjects {
-				if sp.Path == val.Value {
-					rofi.SaveToHistory(namespace, r.Path)
-					break
-				}
-			}
-		}
-		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "i3-sensible-editor")
 	case "editor-save":
 		rofi.SaveToHistory(namespace, val.Value)
 		fallthrough
@@ -134,51 +142,6 @@ func main() {
 			Cmds:  []string{"back"},
 		})
 
-	case "subprojects":
-		rofi.SetPrompt("")
-		rofi.UseHistory(subprojectNamespace)
-		rofi.EnableMarkup()
-
-		cfg := config.GetListConfig()
-		repos := repo.GetCategorizedRepos(cfg.RepoCachePath)
-
-		// Find the monorepo matching the selected value
-		var subProjects []repo.CategorizedRepo
-		for _, r := range repos {
-			if r.Path == val.Value {
-				subProjects = r.SubProjects
-				rofi.SetMessage(r.Name)
-				break
-			}
-		}
-
-		for _, sp := range subProjects {
-			opt := rofi.Option{
-				Label:    sp.Name,
-				Value:    sp.Path,
-				Category: sp.Language,
-				Cmds:     []string{"subproject-editor-save", "context-menu"},
-			}
-
-			if sp.Language != "" {
-				opt.Icon = fmt.Sprintf("language-%s", sp.Language)
-			}
-
-			if opt.Category != "" {
-				opt.Category = fmt.Sprintf("<span style=\"italic\" size=\"10pt\" >(%s)</span>", opt.Category)
-			}
-
-			opts = append(opts, opt)
-		}
-
-		opts = append(opts, rofi.Option{
-			Label: "Go back",
-			Icon:  "back",
-			Cmds:  []string{"back"},
-		})
-
-		opts.Sort()
-
 	default:
 		rofi.SetPrompt("")
 		rofi.SetMessage("")
@@ -188,21 +151,16 @@ func main() {
 		cfg := config.GetListConfig()
 		repos := repo.GetCategorizedRepos(cfg.RepoCachePath)
 
-		for _, repo := range repos {
-			cmds := []string{"editor-save", "context-menu"}
-			if len(repo.SubProjects) > 0 {
-				cmds = []string{"subprojects", "context-menu"}
-			}
-
+		for _, r := range repos {
 			opt := rofi.Option{
-				Label:    repo.Name,
-				Value:    repo.Path,
-				Category: repo.Language,
-				Cmds:     cmds,
+				Label:    r.Name,
+				Value:    r.Path,
+				Category: r.Language,
+				Cmds:     []string{"editor-save", "context-menu"},
 			}
 
-			if repo.Language != "" {
-				opt.Icon = fmt.Sprintf("language-%s", repo.Language)
+			if r.Language != "" {
+				opt.Icon = fmt.Sprintf("language-%s", r.Language)
 			}
 
 			if opt.Category != "" {
@@ -210,6 +168,29 @@ func main() {
 			}
 
 			opts = append(opts, opt)
+
+			if len(r.SubProjects) > 0 {
+				labels := subProjectLabels(r.Name, r.Path, r.SubProjects)
+
+				for _, sp := range r.SubProjects {
+					spOpt := rofi.Option{
+						Label:    labels[sp.Path],
+						Value:    sp.Path,
+						Category: sp.Language,
+						Cmds:     []string{"editor-save", "context-menu"},
+					}
+
+					if sp.Language != "" {
+						spOpt.Icon = fmt.Sprintf("language-%s", sp.Language)
+					}
+
+					if spOpt.Category != "" {
+						spOpt.Category = fmt.Sprintf("<span style=\"italic\" size=\"10pt\" >(%s)</span>", spOpt.Category)
+					}
+
+					opts = append(opts, spOpt)
+				}
+			}
 		}
 		opts.Sort()
 	}
