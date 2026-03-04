@@ -10,8 +10,8 @@ import (
 
 	"github.com/ingentingalls/rofi"
 
-	"github.com/ingentingalls/rofi-repos/pkg/config"
-	"github.com/ingentingalls/rofi-repos/pkg/repo"
+	"github.com/andree-bjorkgard/rofi-repos/pkg/config"
+	"github.com/andree-bjorkgard/rofi-repos/pkg/repo"
 )
 
 const namespace = "recent_repos"

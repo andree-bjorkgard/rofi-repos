@@ -1,4 +1,4 @@
-module github.com/ingentingalls/rofi-repos
+module github.com/andree-bjorkgard/rofi-repos
 
 go 1.20
 

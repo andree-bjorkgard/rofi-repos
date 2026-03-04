@@ -18,8 +18,8 @@ import (
 	"github.com/go-enry/go-enry/v2"
 	"golang.org/x/exp/slices"
 
-	"github.com/ingentingalls/rofi-repos/pkg/config"
-	"github.com/ingentingalls/rofi-repos/pkg/repo"
+	"github.com/andree-bjorkgard/rofi-repos/pkg/config"
+	"github.com/andree-bjorkgard/rofi-repos/pkg/repo"
 )
 
 func main() {
