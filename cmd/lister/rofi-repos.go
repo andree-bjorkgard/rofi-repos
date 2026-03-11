@@ -82,6 +82,11 @@ func main() {
 	case "claude-code":
 		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "claude", "--ide")
 
+	case "complete-workflow":
+		exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "i3-sensible-editor").Start()
+		exec.Command("i3-sensible-terminal", "--working-directory", val.Value).Start()
+		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "claude", "--ide")
+
 	case "editor-save":
 		rofi.SaveToHistory(namespace, val.Value)
 		fallthrough
@@ -110,6 +115,12 @@ func main() {
 				Icon:  "Terminal",
 				Value: val.Value,
 				Cmds:  []string{"claude-code"},
+			},
+			rofi.Option{
+				Label: "Complete workflow",
+				Icon:  "",
+				Value: val.Value,
+				Cmds:  []string{"complete-workflow"},
 			},
 		)
 
