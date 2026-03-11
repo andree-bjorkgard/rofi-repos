@@ -79,6 +79,9 @@ func main() {
 	case "url":
 		cmd = exec.Command("xdg-open", val.Value)
 
+	case "claude-code":
+		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "claude", "--ide")
+
 	case "editor-save":
 		rofi.SaveToHistory(namespace, val.Value)
 		fallthrough
@@ -101,6 +104,12 @@ func main() {
 				Icon:  "Terminal",
 				Value: val.Value,
 				Cmds:  []string{"terminal"},
+			},
+			rofi.Option{
+				Label: "Open in Claude Code",
+				Icon:  "Terminal",
+				Value: val.Value,
+				Cmds:  []string{"claude-code"},
 			},
 		)
 
