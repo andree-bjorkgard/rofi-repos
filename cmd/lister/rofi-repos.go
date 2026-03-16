@@ -80,12 +80,12 @@ func main() {
 		cmd = exec.Command("xdg-open", val.Value)
 
 	case "claude-code":
-		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "claude", "--ide")
+		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "claude", "--dangerously-skip-permissions", "--chrome")
 
 	case "complete-workflow":
 		exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "i3-sensible-editor").Start()
 		exec.Command("i3-sensible-terminal", "--working-directory", val.Value).Start()
-		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "claude", "--ide")
+		cmd = exec.Command("i3-sensible-terminal", "--working-directory", val.Value, "-e", "claude", "--dangerously-skip-permissions", "--chrome")
 
 	case "editor-save":
 		rofi.SaveToHistory(namespace, val.Value)
