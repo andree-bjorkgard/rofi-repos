@@ -95,7 +95,7 @@ func main() {
 
 	case "context-menu":
 		rofi.SaveToHistory(namespace, val.Value)
-		rofi.SetPrompt("")
+		rofi.SetPrompt("")
 		rofi.SetMessage(path.Base(val.Value))
 
 		opts = append(opts, rofi.Option{
@@ -163,7 +163,7 @@ func main() {
 		})
 
 	default:
-		rofi.SetPrompt("")
+		rofi.SetPrompt("")
 		rofi.SetMessage("")
 		rofi.UseHistory(namespace)
 		rofi.EnableMarkup()
