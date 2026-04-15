@@ -155,6 +155,7 @@ func detectLanguage(dir string, skippableDirs []string) string {
 
 func discoverSubProjects(monorepoPath string, rules []config.SubProjectRule, skippableDirs []string) []repo.CategorizedRepo {
 	var subProjects []repo.CategorizedRepo
+	seen := make(map[string]bool)
 
 	for _, rule := range rules {
 		searchRoot := path.Join(monorepoPath, rule.BasePath)
@@ -200,6 +201,12 @@ func discoverSubProjects(monorepoPath string, rules []config.SubProjectRule, ski
 					return nil
 				}
 			}
+
+			if seen[p] {
+				// Already matched by an earlier rule; skip descent to avoid re-walking
+				return filepath.SkipDir
+			}
+			seen[p] = true
 
 			subProjects = append(subProjects, repo.CategorizedRepo{
 				Name:     path.Base(p),
