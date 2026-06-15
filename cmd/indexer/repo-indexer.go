@@ -15,7 +15,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-enry/go-enry/v2"
 	"golang.org/x/exp/slices"
 
 	"github.com/andree-bjorkgard/rofi-repos/pkg/config"
@@ -85,14 +84,13 @@ func index(cfg config.IndexerConfig) {
 
 	for _, r := range repos {
 		entry := repo.CategorizedRepo{
-			Name:     path.Base(r),
-			Path:     r,
-			Language: detectLanguage(r, cfg.SkippableDirs),
+			Name: path.Base(r),
+			Path: r,
 		}
 
 		if monorepo := findMonorepoConfig(r, cfg.Monorepos); monorepo != nil {
 			log.Printf("Monorepo detected: %s, scanning sub-projects", r)
-			entry.SubProjects = discoverSubProjects(r, monorepo.SubProjects, cfg.SkippableDirs)
+			entry.SubProjects = discoverSubProjects(r, monorepo.SubProjects)
 			log.Printf("Found %d sub-projects in %s", len(entry.SubProjects), r)
 		}
 
@@ -115,45 +113,7 @@ func index(cfg config.IndexerConfig) {
 	log.Println("Indexing complete")
 }
 
-func detectLanguage(dir string, skippableDirs []string) string {
-	langProbability := map[string]int{}
-
-	filepath.Walk(dir, func(p string, info os.FileInfo, err error) error {
-		if slices.IndexFunc(skippableDirs, func(d string) bool { return d == p }) != -1 {
-			return filepath.SkipDir
-		}
-
-		if errors.Is(err, fs.ErrPermission) {
-			return nil
-		} else if err != nil {
-			log.Printf("Could not traverse file (%s): %s", info.Name(), err)
-			return nil
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		lang, safe := enry.GetLanguageByExtension(p)
-		if lang != "" && safe {
-			langProbability[lang]++
-		}
-
-		return nil
-	})
-
-	topLang := ""
-	for lang, probability := range langProbability {
-		if topLang == "" || probability > langProbability[topLang] {
-			topLang = lang
-		}
-	}
-
-	return topLang
-}
-
-
-func discoverSubProjects(monorepoPath string, rules []config.SubProjectRule, skippableDirs []string) []repo.CategorizedRepo {
+func discoverSubProjects(monorepoPath string, rules []config.SubProjectRule) []repo.CategorizedRepo {
 	var subProjects []repo.CategorizedRepo
 	seen := make(map[string]bool)
 
@@ -209,9 +169,8 @@ func discoverSubProjects(monorepoPath string, rules []config.SubProjectRule, ski
 			seen[p] = true
 
 			subProjects = append(subProjects, repo.CategorizedRepo{
-				Name:     path.Base(p),
-				Path:     p,
-				Language: detectLanguage(p, skippableDirs),
+				Name: path.Base(p),
+				Path: p,
 			})
 
 			// Don't descend into a matched sub-project

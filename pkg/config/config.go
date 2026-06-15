@@ -35,9 +35,6 @@ type IndexerConfig struct {
 
 	DryRun bool
 
-	// Skippable directories while analyzing the language
-	SkippableDirs []string `toml:"SkippableDirsWhileAnalyzing"`
-
 	Monorepos []MonorepoConfig
 }
 
@@ -57,9 +54,6 @@ RunOnStart = true
 # 
 # Uncomment to use
 Blacklist = [".config", ".cache", ".local", ".cargo", ".oh-my-zsh", ".claude"]
-
-# Skipping folders
-SkippableDirsWhileAnalyzing = [".git", "node_modules", "vendor"]
 `
 
 func GetIndexerConfig() IndexerConfig {

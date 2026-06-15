@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -173,18 +172,9 @@ func main() {
 
 		for _, r := range repos {
 			opt := rofi.Option{
-				Label:    r.Name,
-				Value:    r.Path,
-				Category: r.Language,
-				Cmds:     []string{"editor-save", "context-menu"},
-			}
-
-			if r.Language != "" {
-				opt.Icon = fmt.Sprintf("language-%s", r.Language)
-			}
-
-			if opt.Category != "" {
-				opt.Category = fmt.Sprintf("<span style=\"italic\" size=\"10pt\" >(%s)</span>", opt.Category)
+				Label: r.Name,
+				Value: r.Path,
+				Cmds:  []string{"editor-save", "context-menu"},
 			}
 
 			opts = append(opts, opt)
@@ -194,18 +184,9 @@ func main() {
 
 				for _, sp := range r.SubProjects {
 					spOpt := rofi.Option{
-						Label:    labels[sp.Path],
-						Value:    sp.Path,
-						Category: sp.Language,
-						Cmds:     []string{"editor-save", "context-menu"},
-					}
-
-					if sp.Language != "" {
-						spOpt.Icon = fmt.Sprintf("language-%s", sp.Language)
-					}
-
-					if spOpt.Category != "" {
-						spOpt.Category = fmt.Sprintf("<span style=\"italic\" size=\"10pt\" >(%s)</span>", spOpt.Category)
+						Label: labels[sp.Path],
+						Value: sp.Path,
+						Cmds:  []string{"editor-save", "context-menu"},
 					}
 
 					opts = append(opts, spOpt)
